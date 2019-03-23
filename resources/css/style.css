@@ -1,0 +1,22 @@
+.reference {
+    cursor: pointer;
+    color: #89163d;
+}
+
+span.data-hr {
+    background-color: #ffff00;
+}
+
+.card {
+    overflow: visible;
+}
+
+a {
+    color: #89163d;
+}
+
+a:not([href]):not([tabindex]) {
+    color: #89163d;
+    text-decoration: none;
+}
+
