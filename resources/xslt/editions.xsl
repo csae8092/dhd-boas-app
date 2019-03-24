@@ -16,7 +16,7 @@
     
         
     <xsl:variable name="signatur">
-        <xsl:value-of select=".//tei:institution/text()"/>, <xsl:value-of select=".//tei:repository[1]/text()"/>, <xsl:value-of select=".//tei:msIdentifier/tei:idno[1]/text()"/>
+        <xsl:value-of select="string-join(.//tei:author/tei:persName/tei:surname/text(), ', ')"/>
     </xsl:variable>
  <!--
 ##################################
@@ -41,17 +41,20 @@
                     </div>
                     <div class="col-md-8">
                         <h2 align="center">
-                            <xsl:for-each select="//tei:fileDesc/tei:titleStmt/tei:title">
+                            <small>
+                                <xsl:value-of select="//tei:keywords[@n='subcategory']/tei:term/text()"/>:
+                            </small> <xsl:for-each select="//tei:fileDesc/tei:titleStmt/tei:title">
                                 <xsl:apply-templates/>
                                 <br/>
                             </xsl:for-each>
+                            
                             <a>
                                 <i class="fas fa-info" title="show more info about the document" data-toggle="modal" data-target="#exampleModalLong"/>
                             </a>
                             | 
                             <a href="{$path2source}">
                                 <i class="fas fa-download" title="show TEI source"/>
-                            </a>
+                            </a>                            
                         </h2>
                         <h2 style="text-align:center;">
                             <input type="range" min="1" max="{$amount}" value="{$currentIx}" data-rangeslider="" style="width:100%;"/>
@@ -105,7 +108,7 @@
                         <h3>Zitierhinweis</h3>
                         <blockquote class="blockquote">
                             <cite title="Source Title">
-                                <xsl:value-of select="$signatur"/>, hg. v. <xsl:value-of select="$authors"/>, In: <xsl:value-of select="$projectName"/>
+                                <xsl:value-of select="$signatur"/>, <xsl:value-of select="string-join(.//tei:titleStmt/tei:title//text(), ' ')"/>
                             </cite>
                         </blockquote>                    
                     </p>
@@ -224,7 +227,17 @@
                 </div>
             </div>
         </div>
-        
-        
     </xsl:template>
+    
+    <xsl:template match="tei:graphic">
+        <xsl:variable name="img_url">
+            <xsl:value-of select="concat('../data/IMG/', substring-after(data(./@url), 'Pictures/'))"/>
+        </xsl:variable>
+        <img max-width="600">
+            <xsl:attribute name="src">
+                <xsl:value-of select="$img_url"/>
+            </xsl:attribute>
+        </img>
+    </xsl:template>
+    
 </xsl:stylesheet>
