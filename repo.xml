@@ -10,7 +10,7 @@
     <target>dhd-boas-app</target>
     <prepare>pre-install.xql</prepare>
     <finish>post-install.xql</finish>
-    <permissions xmlns:repo="http://exist-db.org/xquery/repo" user="admin" group="dba" mode="rw-rw-r--"/>
+    <permissions xmlns:repo="http://exist-db.org/xquery/repo" password="" user="admin" group="dba" mode="rw-rw-r--"/>
 
-<deployed>2019-03-23T10:31:00.334+01:00</deployed>
+
 </meta>

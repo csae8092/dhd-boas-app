@@ -479,25 +479,34 @@ declare function app:listBibl($node as node(), $model as map(*)) {
 declare function app:listOrg($node as node(), $model as map(*)) {
     let $hitHtml := "hits.html?searchkey="
     for $item in doc($app:orgIndex)//tei:listOrg/tei:org
-    let $altnames := normalize-space(string-join($item//tei:orgName[@type='alt'], ' '))
-    let $gnd := $item//tei:idno/text()
-    let $gnd_link := if ($gnd) 
-        then
-            <a href="{$gnd}">{$gnd}</a>
-        else
-            'no normdata provided'
-   return
-        <tr>
-            <td>
-                <a href="{concat($hitHtml,data($item/@xml:id))}">{$item//tei:orgName[1]/text()}</a>
-            </td>
-            <td>
-                {$altnames}
-            </td>
-            <td>
-                {$gnd_link}
-            </td>
-        </tr>
+        let $xmlid := data($item/@xml:id)
+        let $ref := '#'||$xmlid
+        let $located := $item//tei:placeName/text()
+        let $gnd := $item//tei:idno[@type='GND']/text()
+        let $rel_persons := for $x in doc($app:personIndex)//tei:person[./tei:affiliation[@ref=$ref]]
+            let $pers_id := data($x/@xml:id)
+            let $first_name := $x//tei:forename
+            let $last_name := $x//tei:surname
+            return
+                <li><a href="{concat($hitHtml, $pers_id)}">{$last_name}, {$first_name}</a></li>
+        let $gnd_link := if ($gnd) 
+            then
+                <a href="{$gnd}">{$gnd}</a>
+            else
+                'no normdata provided'
+       return
+            <tr>
+                <td>
+                    <a href="{concat($hitHtml,data($item/@xml:id))}">{$item//tei:orgName[1]/text()}</a>
+                </td>
+                <td>
+                    {$located}
+                </td>
+                <td>{$rel_persons}</td>
+                <td>
+                    {$gnd_link}
+                </td>
+            </tr>
 };
 
 (:~
