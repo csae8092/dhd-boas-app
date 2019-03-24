@@ -236,23 +236,50 @@ for $title in ($entities, $terms)
 declare function app:listPers($node as node(), $model as map(*)) {
     let $hitHtml := "hits.html?searchkey="
     for $person in doc($app:personIndex)//tei:listPerson/tei:person
-    let $gnd := $person/tei:note/tei:p[3]/text()
-    let $gnd_link := if ($gnd != "no gnd provided") then
-        <a href="{$gnd}">{$gnd}</a>
-        else
-        "-"
-        return
-        <tr>
-            <td>
-                <a href="{concat($hitHtml,data($person/@xml:id))}">{$person/tei:persName/tei:surname}</a>
-            </td>
-            <td>
-                {$person/tei:persName/tei:forename}
-            </td>
-            <td>
-                {$gnd_link}
-            </td>
-        </tr>
+        let $ref := '#'||data($person/@xml:id)
+        let $gnd := $person/tei:idno/text()
+        let $affiliation := for $x in $person//tei:affiliation
+            return
+                <li>{normalize-space($x/text())}</li>
+        let $gnd_link := if ($gnd != "no gnd provided") then
+            <a href="{$gnd}">{$gnd}</a>
+            else
+            "-"
+        let $places := for $x in $person//tei:affiliation
+            let $org_id := substring-after($x/@ref, '#')
+            let $place := doc($app:orgIndex)//tei:org[@xml:id=$org_id]//tei:placeName/text()
+                return
+                    <li>
+                        {$place}
+                    </li>
+        let $abstracts := for $x in collection($app:editions)//tei:TEI[.//tei:author[@ref=$ref]]
+            return 
+            <li>
+                <a href="{app:hrefToDoc($x)}">
+                    {normalize-space(string-join($x//tei:titleStmt/tei:title//text()))}
+               </a>
+            </li>
+            return
+            <tr>
+                <td>
+                    <a href="{concat($hitHtml,data($person/@xml:id))}">{$person/tei:persName/tei:surname}</a>
+                </td>
+                <td>
+                    {$person/tei:persName/tei:forename}
+                </td>
+                <td>
+                    {$abstracts}
+                </td>
+                <td>
+                    {$affiliation}
+                </td>
+                <td>
+                    {$places}
+                </td>
+                <td>
+                    {$gnd_link}
+                </td>
+            </tr>
 };
 
 (:~
@@ -260,19 +287,26 @@ declare function app:listPers($node as node(), $model as map(*)) {
  :)
 declare function app:listPlace($node as node(), $model as map(*)) {
     let $hitHtml := "hits.html?searchkey="
-    for $place in doc($app:placeIndex)//tei:listPlace/tei:place
-    let $lat := tokenize($place//tei:geo/text(), ' ')[1]
-    let $lng := tokenize($place//tei:geo/text(), ' ')[2]
-        return
-        <tr>
-            <td>
-                <a href="{concat($hitHtml, data($place/@xml:id))}">{functx:capitalize-first($place/tei:placeName[1])}</a>
-            </td>
-            <td>{for $altName in $place//tei:placeName return <li>{$altName/text()}</li>}</td>
-            <td>{$place//tei:idno/text()}</td>
-            <td>{$lat}</td>
-            <td>{$lng}</td>
-        </tr>
+    for $org in doc($app:orgIndex)//tei:org[.//tei:placeName[@key]]
+        let $place := $org//tei:location
+        let $place_id := data($place//tei:placeName[@key]/@key)
+        let $lat := tokenize($place//tei:geo/text(), ' ')[2]
+        let $lng := tokenize($place//tei:geo/text(), ' ')[1]
+            group by $place_id
+            return
+            <tr>
+                <td>
+                    {$place[1]/tei:placeName/text()}
+                </td>
+                <td>{
+                    for $x in doc($app:orgIndex)//tei:org[.//tei:placeName[@key=$place_id[1]]]
+                    return 
+                        <li>{$x/tei:orgName[1]}</li>
+                }</td>
+                <td>{$place_id}</td>
+                <td>{$lat[1]}</td>
+                <td>{$lng[1]}</td>
+            </tr>
 };
 
 (:~
@@ -489,6 +523,15 @@ declare function app:listOrg($node as node(), $model as map(*)) {
             let $last_name := $x//tei:surname
             return
                 <li><a href="{concat($hitHtml, $pers_id)}">{$last_name}, {$first_name}</a></li>
+        let $abstracts := for $x in doc($app:personIndex)//tei:person[./tei:affiliation[@ref=$ref]]
+            let $pers_id := '#'||data($x/@xml:id)
+            for $abstract in collection($app:editions)//tei:TEI[.//tei:author[@ref=$pers_id]]
+                return 
+                <li>
+                    <a href="{app:hrefToDoc($abstract)}">
+                        {normalize-space(string-join($abstract//tei:titleStmt/tei:title//text()))}
+                   </a>
+                </li> 
         let $gnd_link := if ($gnd) 
             then
                 <a href="{$gnd}">{$gnd}</a>
@@ -497,12 +540,17 @@ declare function app:listOrg($node as node(), $model as map(*)) {
        return
             <tr>
                 <td>
-                    <a href="{concat($hitHtml,data($item/@xml:id))}">{$item//tei:orgName[1]/text()}</a>
+                    {$item//tei:orgName[1]/text()}
                 </td>
                 <td>
                     {$located}
                 </td>
-                <td>{$rel_persons}</td>
+                <td>
+                    {$rel_persons}
+                </td>
+                <td>
+                    {$abstracts}
+                </td>
                 <td>
                     {$gnd_link}
                 </td>
