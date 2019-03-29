@@ -405,20 +405,57 @@ declare function app:toc($node as node(), $model as map(*)) {
         let $authors := for $x in $title//tei:titleStmt//tei:author
             return
                 <li>{string-join(($x//tei:forename, $x//tei:surname),' ')}</li>
+        let $auth_count := count($title//tei:titleStmt//tei:author)
         let $link2doc := if ($collection)
             then
                 <a href="{app:hrefToDoc($title, $collection)}">{$date}</a>
             else
                 <a href="{app:hrefToDoc($title)}">{$date}</a>
+        let $orgs := for $x in $title//tei:titleStmt//tei:author
+            let $auth_id := substring-after(data($x/@ref), '#')
+            let $orgs := doc($app:personIndex)//tei:person[@xml:id=$auth_id]//tei:affiliation[@ref]
+            for $x in $orgs
+                let $org_id := substring-after(data($x/@ref), '#')
+                let $org := doc($app:orgIndex)//tei:org[@xml:id=$org_id]
+                group by $org_id
+                return $org[1]
+        
+        let $orgname := for $x in $orgs
+            let $name := if ($x//tei:idno[1]/text()) 
+                then
+                    <a href="{$x//tei:idno[1]/text()}">{$x//tei:orgName[1]/text()}</a>
+                else
+                    $x//tei:placeName[1]/text()
+            return <li>{$name}</li>
+
+        let $org_count := count($orgs)
+        
+        let $locations := for $x in $orgs
+            return $x//tei:location
+        
+        let $loc_count := count($locations)
+        
+        let $places := for $x in $locations
+            let $placeName := if ($x//tei:placeName[1]/@key) then <a href="{$x//tei:placeName[1]/@key}">{$x//tei:placeName[1]/text()}</a> else $x//tei:placeName[1]/text()
+            let $id := $placeName/@ref
+                return <li>{$placeName}</li>
+        
+        let $coords := for $x in $locations
+            return <li>{$x//tei:geo}</li>
+        
         return
         <tr>
-            <td>{$authors}<br /></td>
+            <td>{$authors}</td>
+            <td>{$auth_count}</td>
             <td>{$link2doc}</td>
             <td>{$doctype}</td>
             <td>{$keywords}</td>
-            <td>
-                {$topics}
-            </td>
+            <td>{$topics}</td>
+            <td>{$orgname}</td>
+            <td>{$org_count}</td>
+            <td>{$places}</td>
+            <td>{$loc_count}</td>
+            <td>{$coords}</td>
         </tr>
 };
 
